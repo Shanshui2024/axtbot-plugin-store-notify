@@ -1,15 +1,3 @@
-"""
-AxTBot 插件商店通知插件。
-
-功能：
-  1. 将 Webhook 路由直接挂载到 AxTBot 的 FastAPI 实例（复用 AxTBot 主 ip:port）：
-     - /store-notify/github-webhook  接收 GitHub 官方 Webhook（issues opened/closed）
-     - /store-notify/actions-webhook 接收 GitHub Actions 推送（人工审核/自动合入/版本检查）
-  2. 收到事件后向指定 QQ 群发送 markdown 消息；
-     需要人工审核时附带「通过 / 拒绝」按钮。
-  3. 按钮点击（QQ INTERACTION_CREATE）→ 在 GitHub issue 评论 /approve 或 /reject，
-     复用商店仓库的 plugin-approve.yml 工作流完成审批。
-"""
 from __future__ import annotations
 
 from app import on_interaction
@@ -24,10 +12,10 @@ from .server import router as _store_router
 
 __meta__ = PluginMetadata(
     name="插件商店通知",
-    version="1.1.0",
-    author="AxT-Team",
+    version="1.0.1",
+    author="Shanshui2024",
     description="接收插件商店 Webhook，推送审核消息到指定 QQ 群，支持按钮审批",
-    official=True,
+    official=False,
 )
 
 # 把本插件的 Webhook 路由挂到 AxTBot 自己的 FastAPI 实例上：
