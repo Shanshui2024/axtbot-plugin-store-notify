@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.pdm-build/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+.pdm-python
+
+# 配置与密钥
+.env
+local.env
+*.local.env
+
+# IDE / 编辑器
+.idea/
+.vscode/
+*.swp
+
+# 日志
+*.log
+
+# 缓存
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
