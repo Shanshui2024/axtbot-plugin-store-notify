@@ -12,16 +12,16 @@ from .server import router as _store_router
 
 __meta__ = PluginMetadata(
     name="插件商店通知",
-    version="1.0.1",
+    version="1.0.2",
     author="Shanshui2024",
     description="接收插件商店 Webhook，推送审核消息到指定 QQ 群，支持按钮审批",
     official=False,
 )
 
 # 把本插件的 Webhook 路由挂到 AxTBot 自己的 FastAPI 实例上：
-# 复用 AxTBot 主 ip:port，回调地址 /store-notify/* 与 QQ 回调 /webhook 区分开。
+# 复用 AxTBot 主 ip:port，回调地址 /notify/* 与 QQ 回调 /webhook 区分开。
 _app.include_router(_store_router)
-logger.info("store-notify >>> 已挂载 /store-notify/* 路由到 AxTBot FastAPI 实例")
+logger.info("商店通知 >>> 已挂载 /notify/* 路由到 AxTBot FastAPI 实例")
 
 
 def _extract_issue_number(button_id: str, button_data: str, action: str) -> int:
@@ -57,7 +57,7 @@ async def on_button(event: QQInteraction):
         issue_number = _extract_issue_number(button_id, button_data, action)
         if issue_number <= 0:
             logger.warning(
-                f"store-notify >>> 按钮缺少有效 issue 号: id={button_id} data={button_data}"
+                f"商店通知 >>> 按钮缺少有效 issue 号: id={button_id} data={button_data}"
             )
             await interaction_reply(event.id)
             return
@@ -68,13 +68,13 @@ async def on_button(event: QQInteraction):
             admins = [o.strip() for o in config.admin_openids.split(",") if o.strip()]
             if admins and clicker not in admins:
                 logger.warning(
-                    f"store-notify >>> 非管理员 {clicker} 点击审批按钮，已忽略"
+                    f"商店通知 >>> 非管理员 {clicker} 点击审批按钮，已忽略"
                 )
                 await interaction_reply(event.id)
                 return
 
         if not config.github_token:
-            logger.warning("store-notify >>> 未配置 PLUGIN_STORE_GITHUB_TOKEN，无法审批")
+            logger.warning("商店通知 >>> 未配置 PLUGIN_STORE_GITHUB_TOKEN，无法审批")
             await interaction_reply(event.id)
             return
 
@@ -83,16 +83,16 @@ async def on_button(event: QQInteraction):
             config.repo, issue_number, body, config.github_token
         )
         if 200 <= status < 300:
-            logger.info(f"store-notify >>> 已对 issue #{issue_number} 评论 {body}")
+            logger.info(f"商店通知 >>> 已对 issue #{issue_number} 评论 {body}")
             url = f"https://github.com/{config.repo}/issues/{issue_number}"
             await notify.send_markdown(
                 f"### ✅ 审批操作已提交\n\n已对 [Issue #{issue_number}]({url}) 评论 **{body}**。"
             )
         else:
-            logger.error(f"store-notify >>> 审批评论失败 HTTP {status}: {data}")
+            logger.error(f"商店通知 >>> 审批评论失败 HTTP {status}: {data}")
         await interaction_reply(event.id)
     except Exception as e:
-        logger.error(f"store-notify >>> 按钮处理异常: {e}")
+        logger.error(f"商店通知 >>> 按钮处理异常: {e}")
         try:
             await interaction_reply(event.id)
         except Exception:

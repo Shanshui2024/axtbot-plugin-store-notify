@@ -1,9 +1,9 @@
 """
 Webhook 路由：直接挂载到 AxTBot 的 FastAPI 实例（复用 AxTBot 主 ip:port）。
 
-端点（使用 /store-notify 前缀，与 QQ 回调 /webhook 区分）：
-  POST /store-notify/github-webhook  接收 GitHub 官方 Webhook（X-GitHub-Event: issues）
-  POST /store-notify/actions-webhook 接收 GitHub Actions 推送（Bearer 鉴权）
+端点（使用 /notify 前缀，与 QQ 回调 /webhook 区分）：
+  POST /notify/github-webhook  接收 GitHub 官方 Webhook（X-GitHub-Event: issues）
+  POST /notify/actions-webhook 接收 GitHub Actions 推送（Bearer 鉴权）
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from app.modules import logger
 from . import notify
 from .config import config
 
-router = APIRouter(prefix="/store-notify", tags=["StoreNotify"])
+router = APIRouter(prefix="/notify", tags=["Notify"])
 
 
 # ============================================================
@@ -37,12 +37,12 @@ async def _handle_github_event(event_type: str, payload: dict) -> None:
 
         if action == "opened" and "plugin-request" in labels:
             await notify.send_markdown(notify.md_issue_opened(payload))
-            logger.info("store-notify >>> 已推送新插件申请通知")
+            logger.info("商店通知 >>> 已推送新插件申请通知")
         elif action == "closed":
             await notify.send_markdown(notify.md_issue_closed(payload))
-            logger.info("store-notify >>> 已推送插件申请结束通知")
+            logger.info("商店通知 >>> 已推送插件申请结束通知")
     except Exception as e:
-        logger.error(f"store-notify >>> 处理 GitHub Webhook 失败: {e}")
+        logger.error(f"商店通知 >>> 处理 GitHub Webhook 失败: {e}")
 
 
 async def _handle_actions_event(payload: dict) -> None:
@@ -62,19 +62,19 @@ async def _handle_actions_event(payload: dict) -> None:
             await notify.send_markdown(
                 notify.md_review_required(plugin, issue_url, issue_number), buttons
             )
-            logger.info("store-notify >>> 已推送人工审核通知（含按钮）")
+            logger.info("商店通知 >>> 已推送人工审核通知（含按钮）")
         elif event == "plugin_approved":
             await notify.send_markdown(notify.md_approved(plugin, issue_url))
-            logger.info("store-notify >>> 已推送自动审批通过通知")
+            logger.info("商店通知 >>> 已推送自动审批通过通知")
         elif event == "plugin_version_check":
             await notify.send_markdown(
                 notify.md_version_result(
                     payload.get("updated") or [], payload.get("failed") or []
                 )
             )
-            logger.info("store-notify >>> 已推送版本检查结果")
+            logger.info("商店通知 >>> 已推送版本检查结果")
     except Exception as e:
-        logger.error(f"store-notify >>> 处理 Actions Webhook 失败: {e}")
+        logger.error(f"商店通知 >>> 处理 Actions Webhook 失败: {e}")
 
 
 def _dispatch(coro) -> None:
@@ -85,7 +85,7 @@ def _dispatch(coro) -> None:
         try:
             t.result()
         except Exception as e:
-            logger.error(f"store-notify >>> webhook 后台任务异常: {e}")
+            logger.error(f"商店通知 >>> webhook 后台任务异常: {e}")
 
     task.add_done_callback(_done)
 

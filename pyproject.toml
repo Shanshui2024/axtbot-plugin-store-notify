@@ -1,6 +1,6 @@
 [project]
 name = "axtbot-plugin-store-notify"
-version = "1.0.1"
+version = "1.0.2"
 description = "AxTBot 插件商店通知：接收 GitHub Webhook 并推送审核消息到指定 QQ 群"
 authors = [
     {name = "Shanshui2024", email = "shanshui@shanshui.site"},

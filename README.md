@@ -11,8 +11,8 @@ AxTBot 插件商店通知：接收插件商店的 GitHub Webhook，把审核进�
 ## 工作原理
 
 ```
-GitHub 仓库 Webhook ──POST──▶ AxTBot FastAPI (/store-notify/github-webhook)   → 新申请 / 申请结束
-GitHub Actions 推送 ──POST──▶ AxTBot FastAPI (/store-notify/actions-webhook) → 人工审核(按钮) / 自动合入 / 版本检查
+GitHub 仓库 Webhook ──POST──▶ AxTBot FastAPI (/notify/github-webhook)   → 新申请 / 申请结束
+GitHub Actions 推送 ──POST──▶ AxTBot FastAPI (/notify/actions-webhook) → 人工审核(按钮) / 自动合入 / 版本检查
                                          │
                                           ▼ 发送 markdown (+按钮)
                                    指定 QQ 群
@@ -27,7 +27,7 @@ GitHub Actions 推送 ──POST──▶ AxTBot FastAPI (/store-notify/actions-
 本插件的 Webhook 路由**直接挂载到 AxTBot 的 FastAPI 实例**上：
 
 - 复用 AxTBot 主服务的 ip:port，**不额外占用端口**；
-- 路径使用 `/store-notify/*` 前缀，与 QQ 回调 `/webhook` 区分，互不冲突；
+- 路径使用 `/notify/*` 前缀，与 QQ 回调 `/webhook` 区分，互不冲突；
 - 生命周期由 uvicorn 统一管理，无需手动起停。
 
 ## 安装
@@ -79,7 +79,7 @@ PLUGIN_STORE_ADMIN_OPENIDS=
 
 仓库 → **Settings → Webhooks → Add webhook**：
 
-- **Payload URL**：`https://<AxTBot公网域名或IP>:<AxTBot端口>/store-notify/github-webhook`
+- **Payload URL**：`https://<AxTBot公网域名或IP>:<AxTBot端口>/notify/github-webhook`
 - **Content type**：`application/json`
 - **Secret**：与 `PLUGIN_STORE_GITHUB_SECRET` 保持一致
 - **Which events**：**Let me select individual events** → 勾选 **Issues**
@@ -89,14 +89,14 @@ PLUGIN_STORE_ADMIN_OPENIDS=
 商店仓库的 `plugin-submission.yml` / `update-plugin-versions.yml` 会推送到
 `AUTO_REVIEW_WEBHOOK_URL`。在仓库 **Settings → Secrets and variables → Actions** 配置：
 
-- `AUTO_REVIEW_WEBHOOK_URL` = `https://<AxTBot公网域名或IP>:<AxTBot端口>/store-notify/actions-webhook`
+- `AUTO_REVIEW_WEBHOOK_URL` = `https://<AxTBot公网域名或IP>:<AxTBot端口>/notify/actions-webhook`
 - `AUTO_REVIEW_WEBHOOK_TOKEN` = 与 `PLUGIN_STORE_ACTIONS_TOKEN` 一致
 
 ### 3. QQ 开放平台
 
 - 机器人需开启**群聊消息（markdown）**与**消息按钮**能力；
 - 事件订阅回调地址指向 AxTBot 的 `/webhook`（框架已配置，无需改动）；
-- `/webhook`（QQ 回调）与 `/store-notify/*`（本插件）共用同一端口，路径不同，不冲突。
+- `/webhook`（QQ 回调）与 `/notify/*`（本插件）共用同一端口，路径不同，不冲突。
 
 ### 4. 公网可达
 
@@ -131,7 +131,7 @@ pip install dist/axtbot_plugin_store_notify-*.whl
 
 ## 常见问题
 
-**Q：重启后日志里没看到 `store-notify >>> 已挂载`？**
+**Q：重启后日志里没看到 `notify >>> 已挂载`？**
 
 确认插件是否被加载（日志应出现 `插件 >>> 从本地包/PyPI 加载插件: 插件商店通知`）。
 本地包方式请检查 `plugins/axtbot_plugin_store_notify/` 目录是否完整。
