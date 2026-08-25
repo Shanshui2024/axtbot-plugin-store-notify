@@ -12,9 +12,9 @@ from .server import router as _store_router
 
 __meta__ = PluginMetadata(
     name="插件商店通知",
-    version="1.0.2",
+    version="1.2.0",
     author="Shanshui2024",
-    description="接收插件商店 Webhook，推送审核消息到指定 QQ 群，支持按钮审批",
+    description="接收插件商店 Webhook，推送审核消息与运行错误日志到指定 QQ 群，支持按钮审批",
     official=False,
 )
 

@@ -46,11 +46,13 @@ async def _handle_github_event(event_type: str, payload: dict) -> None:
 
 
 async def _handle_actions_event(payload: dict) -> None:
-    """GitHub Actions 推送：审核状态事件 → markdown（可选带按钮）"""
+    """GitHub Actions 推送：审核状态事件 → markdown（可选带按钮/日志）"""
     try:
         event = payload.get("event", "")
         plugin = payload.get("plugin") or {}
         issue_url = payload.get("issue") or ""
+        run_url = payload.get("run") or ""
+        error_log = payload.get("log") or ""
         issue_number = 0
         try:
             issue_number = int(issue_url.rstrip("/").split("/")[-1])
@@ -60,7 +62,10 @@ async def _handle_actions_event(payload: dict) -> None:
         if event == "plugin_review_required":
             buttons = notify.build_review_buttons(issue_number) if issue_number else None
             await notify.send_markdown(
-                notify.md_review_required(plugin, issue_url, issue_number), buttons
+                notify.md_review_required(
+                    plugin, issue_url, issue_number, run_url, error_log
+                ),
+                buttons,
             )
             logger.info("商店通知 >>> 已推送人工审核通知（含按钮）")
         elif event == "plugin_approved":
@@ -69,7 +74,9 @@ async def _handle_actions_event(payload: dict) -> None:
         elif event == "plugin_version_check":
             await notify.send_markdown(
                 notify.md_version_result(
-                    payload.get("updated") or [], payload.get("failed") or []
+                    payload.get("updated") or [],
+                    payload.get("failed") or [],
+                    run_url,
                 )
             )
             logger.info("商店通知 >>> 已推送版本检查结果")

@@ -10,25 +10,42 @@ from app.classes import (
     Keyboard,
     KeyboardContent,
     Markdown,
+    Permission,
     RenderData,
     Row,
     Sender,
 )
 from app.service.qq_service.MsgSender import send_group_message
 
+# QQ markdown 消息总长度限制较严，日志摘要需截断
+MAX_LOG_CHARS = 800
+
 
 def build_review_buttons(issue_number: int) -> list[Button]:
-    """人工审核按钮：通过 / 拒绝"""
+    """人工审核按钮：通过 / 拒绝。
+
+    permission 必须显式设为所有人可点（type=2），
+    否则平台按默认权限处理，普通成员点击会提示"无权限操作"。
+    服务端仍由 config.admin_openids 做二次校验。
+    """
     return [
         Button(
             id=f"store_approve_{issue_number}",
             render_data=RenderData(label="✅ 通过", style=3),
-            action=Action(type=1, data=f"approve:{issue_number}"),
+            action=Action(
+                type=1,
+                permission=Permission(type=2),
+                data=f"approve:{issue_number}",
+            ),
         ),
         Button(
             id=f"store_reject_{issue_number}",
             render_data=RenderData(label="❌ 拒绝", style=2),
-            action=Action(type=1, data=f"reject:{issue_number}"),
+            action=Action(
+                type=1,
+                permission=Permission(type=2),
+                data=f"reject:{issue_number}",
+            ),
         ),
     ]
 
@@ -87,19 +104,51 @@ def md_issue_closed(payload: dict) -> str:
     )
 
 
-def md_review_required(plugin: dict, issue_url: str, issue_number: int) -> str:
-    """需要人工审核 markdown（带按钮）"""
+def _clip(text: str, limit: int = MAX_LOG_CHARS) -> str:
+    """保留末尾 limit 个字符（错误通常在日志尾部），并做整体长度兜底。"""
+    text = (text or "").strip()
+    if len(text) > limit:
+        text = "...\n" + text[-limit:]
+    return text
+
+
+def md_review_required(
+    plugin: dict,
+    issue_url: str,
+    issue_number: int,
+    run_url: str = "",
+    error_log: str = "",
+) -> str:
+    """需要人工审核 markdown（带按钮 + 可选运行错误日志）"""
     name = plugin.get("name") or "未知"
     pypi = plugin.get("pypi") or ""
     author = plugin.get("author") or ""
-    return (
-        "### 🧐 插件需要人工审核\n\n"
-        f"**插件**：{name}\n\n"
-        f"**PyPI**：`{pypi}`\n\n"
-        f"**作者**：{author}\n\n"
-        "自动验证未通过，请在下方选择操作：\n\n"
-        f"[Issue #{issue_number}]({issue_url})"
-    )
+    lines = [
+        "### 🧐 插件需要人工审核",
+        "",
+        f"**插件**：{name}",
+        "",
+        f"**PyPI**：`{pypi}`",
+        "",
+        f"**作者**：{author}",
+        "",
+        "自动验证未通过，请在下方选择操作：",
+        "",
+        f"[Issue #{issue_number}]({issue_url})",
+    ]
+    if run_url:
+        lines += ["", f"[完整运行日志]({run_url})"]
+    excerpt = _clip(error_log)
+    if excerpt:
+        lines += [
+            "",
+            "**❌ 运行错误日志（末尾摘要）**",
+            "",
+            "```text",
+            excerpt,
+            "```",
+        ]
+    return "\n".join(lines)
 
 
 def md_approved(plugin: dict, issue_url: str = "") -> str:
@@ -116,19 +165,43 @@ def md_approved(plugin: dict, issue_url: str = "") -> str:
     return "\n".join(lines)
 
 
-def md_version_result(updated: list, failed: list) -> str:
-    """每日版本检查结果 markdown"""
+def md_version_result(updated: list, failed: list, run_url: str = "") -> str:
+    """每日版本检查结果 markdown（failed 项可含 reason / error 字段）"""
     lines = ["### 📦 插件版本检查"]
+    if run_url:
+        lines += ["", f"[完整运行日志]({run_url})"]
     if updated:
-        lines.append("\n**已更新**：")
+        lines.append("")
+        lines.append("**已更新**：")
         for item in updated:
             lines.append(f"- `{item.get('pypi')}` → `{item.get('version')}`")
     if failed:
-        lines.append("\n**验证失败（需人工处理）**：")
+        lines.append("")
+        lines.append("**验证失败（需人工处理）**：")
         for item in failed:
+            reason = item.get("reason") or ""
+            suffix = f"（{reason}）" if reason else ""
             lines.append(
-                f"- `{item.get('pypi')}`：`{item.get('current')}` → `{item.get('latest')}`"
+                f"- `{item.get('pypi')}`：`{item.get('current')}` → "
+                f"`{item.get('latest')}`{suffix}"
             )
+        # 错误日志摘要逐项附在列表后，避免破坏列表结构
+        budget = MAX_LOG_CHARS
+        for item in failed:
+            error = (item.get("error") or "").strip()
+            if not error:
+                continue
+            excerpt = _clip(error, budget)
+            lines += [
+                "",
+                f"**`{item.get('pypi')}` 错误摘要**",
+                "",
+                "```text",
+                excerpt,
+                "```",
+            ]
+            budget = max(budget // 2, 200)
     if not updated and not failed:
-        lines.append("\n本次无版本变更。")
+        lines.append("")
+        lines.append("本次无版本变更。")
     return "\n".join(lines)
