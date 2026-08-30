@@ -3,14 +3,20 @@ from __future__ import annotations
 
 import aiohttp
 
+from . import github_app
+
 
 async def post_issue_comment(
     repo: str,
     issue_number: int,
     body: str,
-    token: str,
 ) -> tuple[int, dict]:
-    """在指定 issue 上发布评论。token 需有 issues:write 权限。"""
+    """在指定 issue 上发布评论。
+
+    令牌优先使用 GitHub App 的 installation token（评论归属于 App 身份），
+    未配置 GitHub App 时回退到个人 PAT。
+    """
+    token = await github_app.get_access_token()
     url = f"https://api.github.com/repos/{repo}/issues/{issue_number}/comments"
     headers = {
         "Authorization": f"Bearer {token}",

@@ -56,13 +56,35 @@ pip install axtbot-plugin-store-notify
 | `PLUGIN_STORE_GITHUB_SECRET` | 是 | GitHub 官方 Webhook 签名密钥，与仓库 Webhook 的 Secret 一致 |
 | `PLUGIN_STORE_ACTIONS_TOKEN` | 否* | GitHub Actions 推送鉴权 token，与仓库 Actions Secret `AUTO_REVIEW_WEBHOOK_TOKEN` 一致 |
 | `PLUGIN_STORE_GROUP_OPENID` | 是 | 通知目标 QQ 群 openid |
-| `PLUGIN_STORE_GITHUB_TOKEN` | 否* | 按钮审批用的 GitHub Token（fine-grained PAT，需 Issues read/write 权限） |
+| `PLUGIN_STORE_GITHUB_APP_ID` | 否* | GitHub App 的 App ID（在 App 设置页查看） |
+| `PLUGIN_STORE_GITHUB_APP_PRIVATE_KEY` | 否* | GitHub App 私钥 PEM 全文（与 `APP_ID` 一起配置走 App 鉴权） |
+| `PLUGIN_STORE_GITHUB_APP_PRIVATE_KEY_PATH` | 否* | App 私钥文件路径（与上面二选一，优先用全文） |
+| `PLUGIN_STORE_GITHUB_APP_INSTALLATION_ID` | 否* | 安装到商店仓库的 Installation ID |
+| `PLUGIN_STORE_GITHUB_TOKEN` | 否* | 按钮审批 fallback 用的 GitHub Token（fine-grained PAT，需 Issues read/write 权限） |
 | `PLUGIN_STORE_REPO` | 否 | 监听商店仓库，默认 `AxT-Team/AxTBot-PluginStore` |
 | `PLUGIN_STORE_ADMIN_OPENIDS` | 否 | 允许操作审批按钮的管理员 openid（逗号分隔），留空不做成员校验 |
 
 \* 用不到 Actions 推送 / 按钮审批功能时可留空。
 
-示例：
+> **推荐用 GitHub App 鉴权**：配置了 `PLUGIN_STORE_GITHUB_APP_*` 三项后，
+> 审批评论（/approve、/reject）会走 GitHub App 的 installation token，
+> 评论归属于 **GitHub App 机器人身份**而不是某个个人账号；
+> 未配置时回退到 `PLUGIN_STORE_GITHUB_TOKEN`（个人 PAT）。
+
+示例（GitHub App 方式）：
+
+```env
+PLUGIN_STORE_GITHUB_SECRET=your_github_webhook_secret
+PLUGIN_STORE_ACTIONS_TOKEN=your_actions_token
+PLUGIN_STORE_GROUP_OPENID=your_group_openid
+PLUGIN_STORE_GITHUB_APP_ID=123456
+PLUGIN_STORE_GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
+PLUGIN_STORE_GITHUB_APP_INSTALLATION_ID=654321
+PLUGIN_STORE_REPO=AxT-Team/AxTBot-PluginStore
+PLUGIN_STORE_ADMIN_OPENIDS=
+```
+
+示例（个人 PAT 回退方式）：
 
 ```env
 PLUGIN_STORE_GITHUB_SECRET=your_github_webhook_secret

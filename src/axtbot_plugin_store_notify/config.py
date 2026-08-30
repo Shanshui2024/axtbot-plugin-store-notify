@@ -27,7 +27,15 @@ class Config:
     # 通知目标 QQ 群 openid
     group_openid: str = _get("PLUGIN_STORE_GROUP_OPENID")
 
-    # 按钮审批所用的 GitHub Token（需 issues:write 权限，如 fine-grained PAT）
+    # --- GitHub App 鉴权（评论归属于 App 身份，而非个人账号）---
+    # 三者都配置时，审批评论通过 GitHub App 的 installation token 发送；
+    # 留空则回退到下面的个人 PAT。私钥可填 PEM 全文，或指定私钥文件路径。
+    github_app_id: str = _get("PLUGIN_STORE_GITHUB_APP_ID")
+    github_app_private_key: str = _get("PLUGIN_STORE_GITHUB_APP_PRIVATE_KEY")
+    github_app_private_key_path: str = _get("PLUGIN_STORE_GITHUB_APP_PRIVATE_KEY_PATH")
+    github_app_installation_id: str = _get("PLUGIN_STORE_GITHUB_APP_INSTALLATION_ID")
+
+    # 按钮审批所用的 GitHub Token（fallback，需 issues:write 权限的 fine-grained PAT）
     github_token: str = _get("PLUGIN_STORE_GITHUB_TOKEN")
 
     # 监听商店仓库

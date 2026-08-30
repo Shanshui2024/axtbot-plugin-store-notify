@@ -73,15 +73,15 @@ async def on_button(event: QQInteraction):
                 await interaction_reply(event.id)
                 return
 
-        if not config.github_token:
-            logger.warning("商店通知 >>> 未配置 PLUGIN_STORE_GITHUB_TOKEN，无法审批")
+        body = "/approve" if action == "approve" else "/reject"
+        try:
+            status, data = await github_api.post_issue_comment(
+                config.repo, issue_number, body
+            )
+        except RuntimeError as e:
+            logger.warning(f"商店通知 >>> 审批失败: {e}")
             await interaction_reply(event.id)
             return
-
-        body = "/approve" if action == "approve" else "/reject"
-        status, data = await github_api.post_issue_comment(
-            config.repo, issue_number, body, config.github_token
-        )
         if 200 <= status < 300:
             logger.info(f"商店通知 >>> 已对 issue #{issue_number} 评论 {body}")
             url = f"https://github.com/{config.repo}/issues/{issue_number}"
